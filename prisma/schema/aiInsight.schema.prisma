@@ -1,0 +1,11 @@
+model AIInsight {
+  id            String   @id @default(uuid())
+  insightType   String   // e.g., "SALES_PREDICTION", "STOCK_ALERT"
+  content       Json     // Structured AI response
+  summary       String   @db.Text
+  
+  createdAt     DateTime @default(now())
+
+  userId        String
+  user          User     @relation("UserInsights", fields: [userId], references: [id], onDelete: Cascade)
+}

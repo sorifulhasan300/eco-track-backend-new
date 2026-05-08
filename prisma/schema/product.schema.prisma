@@ -1,0 +1,25 @@
+model Product {
+  id              String   @id @default(uuid())
+  title           String
+  description     String   @db.Text
+  shortDesc       String?  // AI Generated Short Summary
+  image           String   // Required for Card UI
+  price           Float
+  stockLevel      Int      @default(0)
+  rating          Float    @default(0.0)
+  location        String   // e.g., "Warehouse A, Block 4"
+  category        String   
+  tags            String[] // AI Auto-generated tags
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  userId          String
+  user            User     @relation("UserProducts", fields: [userId], references: [id], onDelete: Cascade)
+  
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  
+  orderItems      OrderItem[]
+}

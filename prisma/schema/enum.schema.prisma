@@ -1,0 +1,16 @@
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    BLOCKED
+}
