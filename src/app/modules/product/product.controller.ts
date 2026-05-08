@@ -62,27 +62,32 @@ const getSingleProduct = async (
   }
 };
 
-const getDashboardStatsFromDB = async (
+const updateProduct = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const { id } = req.params;
-    const result = await ProductServices.getDashboardStatsFromDB();
+    const result = await ProductServices.updateProductIntoDB(
+      id as string,
+      req.body,
+    );
+
     sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Dashboard statics fetched successfully",
+      message: "Product updated successfully",
       data: result,
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const ProductControllers = {
   createProduct,
   getAllProducts,
   getSingleProduct,
-  getDashboardStatsFromDB,
+  updateProduct,
 };

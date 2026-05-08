@@ -64,49 +64,19 @@ const getSingleProductFromDB = async (id: string) => {
   });
 };
 
-const getDashboardStatsFromDB = async () => {
-  const totalProducts = await prisma.product.count();
-
-  const totalInventoryValue = await prisma.product.aggregate({
-    _sum: {
-      price: true,
-    },
+const updateProductIntoDB = async (id: string, payload: Partial<Product>) => {
+  const result = await prisma.product.update({
+    where: { id },
+    data: payload,
+    include: { user: { select: { name: true, email: true } } },
   });
-
-  const lowStockItems = await prisma.product.count({
-    where: {
-      stockLevel: {
-        lte: 5,
-      },
-    },
-  });
-
-  const categoryStats = await prisma.product.groupBy({
-    by: ["category"],
-    _count: {
-      id: true,
-    },
-  });
-
-  const recentProducts = await prisma.product.findMany({
-    take: 5,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return {
-    totalProducts,
-    totalValue: totalInventoryValue._sum.price || 0,
-    lowStockItems,
-    categoryStats,
-    recentProducts,
-  };
+  return result;
 };
+
 
 export const ProductServices = {
   createProductIntoDB,
   getAllProductsFromDB,
   getSingleProductFromDB,
-  getDashboardStatsFromDB,
+  updateProductIntoDB,
 };

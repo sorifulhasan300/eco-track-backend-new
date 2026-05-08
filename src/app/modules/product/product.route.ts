@@ -21,9 +21,11 @@ router.post(
   ProductControllers.createProduct,
 );
 
-router.get(
-  "/dashboard-statistics",
-  auth(USER_ROLE.ADMIN, USER_ROLE.MANAGER),
-  ProductControllers.getDashboardStatsFromDB,
+router.patch(
+  "/:id/update-product",
+  auth(USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.STAFF),
+  validateRequest(ProductValidations.updateProductValidationSchema),
+  ProductControllers.updateProduct,
 );
+
 export const ProductRoutes = router;
