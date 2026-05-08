@@ -2,17 +2,17 @@
 import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
-// import compression from "compression";
-// import { apiLimiter } from "./middlewares/limiter.middleware";
-// import { globalErrorHandler } from "./middlewares/error.middleware";
-// import { notFoundHandler } from "./middlewares/notFound.middleware";
-// import { BaseRouter } from "./routes/router";
+import compression from "compression";
+import { apiLimiter } from "./middlewares/limiter.middleware";
+import { globalErrorHandler } from "./middlewares/error.middleware";
+import { notFoundHandler } from "./middlewares/notFound.middleware";
+import { BaseRouter } from "./routes/router";
 
 const app: Application = express();
 
 // --- 1. Security & Optimization Middlewares ---
 app.use(helmet()); // Security headers set kore
-// app.use(compression()); // Response size komay (Performance requirement)
+app.use(compression()); // Response size komay (Performance requirement)
 
 // --- 2. CORS Configuration ---
 app.use(
@@ -32,7 +32,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- 4. Rate Limiter (Requirement) ---
-// app.use("/api", apiLimiter);
+app.use("/api", apiLimiter);
 
 // --- 5. Health Check ---
 app.get("/", (req, res) => {
@@ -40,15 +40,15 @@ app.get("/", (req, res) => {
 });
 
 // Import and use your routes here
-// app.use("/api/v1", BaseRouter);
+app.use("/api/v1", BaseRouter);
 
 // --- 404 Not found Handling
-// app.use(notFoundHandler);
+app.use(notFoundHandler);
 
 // --- 7. Sentry Error Handler (must be before globalErrorHandler)
 // Sentry.setupExpressErrorHandler(app);
 
 // --- 8. Error Handling
-// app.use(globalErrorHandler);
+app.use(globalErrorHandler);
 
 export default app;
