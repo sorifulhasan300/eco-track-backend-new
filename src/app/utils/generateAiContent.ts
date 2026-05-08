@@ -7,7 +7,7 @@ export const generateProductMetadata = async (
   title: string,
   description: string,
 ) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
     Analyze the following product:
