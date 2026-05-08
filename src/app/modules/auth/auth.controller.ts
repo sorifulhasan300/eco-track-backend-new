@@ -32,7 +32,24 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const getMe = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req.user as any).id;
+    const result = await AuthServices.getMeFromDB(userId);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User fetched successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthControllers = {
   register,
   login,
+  getMe,
 };
