@@ -2,10 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { SupplierServices } from "./supplier.service";
 import sendResponse from "../../utils/send.response";
 
-const createSupplier = async (req: Request, res: Response, next: NextFunction) => {
+const createSupplier = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const result = await SupplierServices.createSupplierIntoDB(req.body);
-
+    
     sendResponse(res, {
       statusCode: 201,
       success: true,
@@ -17,7 +21,11 @@ const createSupplier = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-const getAllSuppliers = async (req: Request, res: Response, next: NextFunction) => {
+const getAllSuppliers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const result = await SupplierServices.getAllSuppliersFromDB(req.query);
 
@@ -33,7 +41,11 @@ const getAllSuppliers = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-const getSingleSupplier = async (req: Request, res: Response, next: NextFunction) => {
+const getSingleSupplier = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     const result = await SupplierServices.getSingleSupplierFromDB(id as string);
@@ -49,10 +61,17 @@ const getSingleSupplier = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-const updateSupplier = async (req: Request, res: Response, next: NextFunction) => {
+const updateSupplier = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
-    const result = await SupplierServices.updateSupplierIntoDB(id as string, req.body);
+    const result = await SupplierServices.updateSupplierIntoDB(
+      id as string,
+      req.body,
+    );
 
     sendResponse(res, {
       statusCode: 200,
@@ -65,7 +84,11 @@ const updateSupplier = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-const deleteSupplier = async (req: Request, res: Response, next: NextFunction) => {
+const deleteSupplier = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     const result = await SupplierServices.deleteSupplierFromDB(id as string);

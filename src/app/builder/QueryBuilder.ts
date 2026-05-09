@@ -28,7 +28,14 @@ class QueryBuilder<T> {
 
   filter() {
     const queryObj = { ...this.query };
-    const excludeFields = ["searchTerm", "sort", "limit", "page", "fields"];
+    const excludeFields = [
+      "searchTerm",
+      "sort",
+      "sortOrder",
+      "limit",
+      "page",
+      "fields",
+    ];
     excludeFields.forEach((el) => delete queryObj[el]);
 
     // Handle range filtering (e.g. price, stock)

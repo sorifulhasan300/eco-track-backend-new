@@ -73,7 +73,6 @@ const updateProductIntoDB = async (id: string, payload: Partial<Product>) => {
   return result;
 };
 
-
 export const ProductServices = {
   createProductIntoDB,
   getAllProductsFromDB,
