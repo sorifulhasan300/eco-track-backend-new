@@ -9,20 +9,20 @@ const router = express.Router();
 
 router.post(
   "/create",
-  auth(USER_ROLE.MANAGER, USER_ROLE.ADMIN),
+  auth(USER_ROLE.MANAGER, USER_ROLE.ADMIN, USER_ROLE.STAFF),
   validateRequest(OrderValidations.createOrderValidationSchema),
   OrderControllers.createOrder,
 );
 
 router.get(
   "/my-orders",
-  auth(USER_ROLE.ADMIN, USER_ROLE.ADMIN),
+  auth(USER_ROLE.ADMIN, USER_ROLE.ADMIN, USER_ROLE.STAFF),
   OrderControllers.getMyOrders,
 );
 
 router.get(
   "/all-orders",
-  auth(USER_ROLE.ADMIN, USER_ROLE.MANAGER),
+  auth(USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.STAFF),
   OrderControllers.getAllOrders,
 );
 

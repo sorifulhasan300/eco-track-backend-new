@@ -37,10 +37,12 @@ async function generateWithRetry(
       }
 
       const delay = baseDelayMs * Math.pow(2, i);
-      logger.warn(
-        "Gemini overloaded (503). Retrying after delay...",
-        { attempt: i + 1, maxRetries, delayMs: delay, model: primaryModel },
-      );
+      logger.warn("Gemini overloaded (503). Retrying after delay...", {
+        attempt: i + 1,
+        maxRetries,
+        delayMs: delay,
+        model: primaryModel,
+      });
       await sleep(delay);
     }
   }
@@ -50,17 +52,17 @@ async function generateWithRetry(
     logger.warn("Falling back to secondary model", { fallbackModel });
     return await attempt(fallbackModel, true);
   } catch (err: any) {
-    logger.error(
-      "AI service unavailable after retries and fallback",
-      { err: err.message, maxRetries },
-    );
+    logger.error("AI service unavailable after retries and fallback", {
+      err: err.message,
+      maxRetries,
+    });
     throw new Error(
       `AI service is temporarily unavailable after ${maxRetries} retries and fallback. Please try again later.`,
     );
   }
 }
 
-export const getAiAnalyticsFromDB = async () => {
+const getAdminAiAnalyticsFromDB = async () => {
   logger.info("Generating AI analytics...");
 
   // ── 1. Fetch dashboard statistics via Prisma ──────────────────────────────
@@ -178,4 +180,171 @@ Return ONLY valid JSON — no markdown, no code fences, no extra text.
     dataSnapshot: inventoryContext,
     aiInsights,
   };
+};
+
+const getStaffAnalyticsFromDB = async (staffId: string) => {
+  logger.info("Generating Staff AI analytics...", { staffId });
+
+  // ── 1. Fetch staff-specific data ──────────────────────────────────────────
+  const [
+    myOrders,
+    totalSalesResult,
+    recentOrders,
+    topProductsSold,
+    dailySalesThisWeek,
+  ] = await Promise.all([
+    // Total orders created by this staff
+    prisma.order.count({
+      where: { userId: staffId },
+    }),
+
+    // Total revenue from this staff's orders
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        createdById: staffId,
+        status: "COMPLETED",
+      },
+    }),
+
+    // Last 5 orders by this staff
+    prisma.order.findMany({
+      where: { userId: staffId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        status: true,
+        totalAmount: true,
+        createdAt: true,
+      },
+    }),
+
+    // Top 5 products this staff sold most
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        order: { userId: staffId },
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 5,
+    }),
+
+    // Daily sales count this week (last 7 days)
+    prisma.order.findMany({
+      where: {
+        createdById: staffId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
+      },
+      select: { createdAt: true, totalAmount: true },
+    }),
+  ]);
+
+  // ── 2. Resolve product titles for top products ────────────────────────────
+  const productIds = topProductsSold.map((t) => t.productId);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, title: true, category: true },
+  });
+
+  const topProducts = topProductsSold.map((item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return {
+      productName: product?.title ?? "Unknown",
+      category: product?.category ?? "Uncategorized",
+      totalQuantitySold: item._sum.quantity ?? 0,
+    };
+  });
+
+  // ── 3. Group daily sales by date ──────────────────────────────────────────
+  const dailyMap: Record<string, { orders: number; revenue: number }> = {};
+  for (const order of dailySalesThisWeek) {
+    const date = order.createdAt.toISOString().split("T")[0];
+    if (!dailyMap[date]) dailyMap[date] = { orders: 0, revenue: 0 };
+    dailyMap[date].orders += 1;
+    dailyMap[date].revenue += order.totalAmount ?? 0;
+  }
+  const dailySales = Object.entries(dailyMap)
+    .map(([date, data]) => ({ date, ...data }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // ── 4. Build context for Gemini ───────────────────────────────────────────
+  const staffContext = {
+    staffId,
+    totalOrdersCreated: myOrders,
+    totalRevenue: totalSalesResult._sum.totalAmount ?? 0,
+    recentOrders: recentOrders.map((o) => ({
+      id: o.id,
+      status: o.status,
+      amount: o.totalAmount,
+      date: o.createdAt,
+    })),
+    topProductsSold: topProducts,
+    dailySalesThisWeek: dailySales,
+  };
+
+  // ── 5. Gemini prompt for Staff ────────────────────────────────────────────
+  const prompt = `
+You are a supportive Sales Performance Coach analyzing a staff member's individual sales data
+from the Eco-Track inventory management system.
+
+--- STAFF PERFORMANCE DATA ---
+${JSON.stringify(staffContext, null, 2)}
+------------------------------
+
+Analyze this data and provide personalized insights. 
+Return ONLY valid JSON — no markdown, no code fences, no extra text.
+
+{
+  "performanceSummary": {
+    "performanceLevel": "<Excellent | Good | Average | Needs Improvement>",
+    "summary": "<2-3 sentence personalized overview of this staff member's performance>",
+    "keyMetrics": {
+      "totalOrders": <number>,
+      "totalRevenue": <number>,
+      "avgOrderValue": <number>,
+      "activeDaysThisWeek": <number>
+    }
+  },
+  "strengths": [
+    {
+      "title": "<strength title>",
+      "description": "<1-2 sentence description of what they are doing well>"
+    }
+  ],
+  "improvementTips": [
+    {
+      "title": "<tip title>",
+      "description": "<actionable 1-2 sentence tip to improve sales>",
+      "priority": "<High | Medium | Low>"
+    }
+  ],
+  "dailyGoalSuggestion": {
+    "recommendedDailyOrders": <number>,
+    "recommendedDailyRevenue": <number>,
+    "reasoning": "<1-2 sentence explanation of why these targets make sense>"
+  }
+}
+`;
+
+  // ── 6. Call Gemini with retry ─────────────────────────────────────────────
+  const rawText = await generateWithRetry(prompt);
+  const cleanJson = rawText.replace(/```(?:json)?|```/g, "").trim();
+  const aiInsights = JSON.parse(cleanJson);
+
+  logger.info("Staff AI analytics generated successfully", { staffId });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    dataSnapshot: staffContext,
+    aiInsights,
+  };
+};
+
+export const analyticsService = {
+  getAdminAiAnalyticsFromDB,
+  getStaffAnalyticsFromDB,
 };
