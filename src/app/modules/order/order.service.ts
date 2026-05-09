@@ -17,9 +17,10 @@ const createOrderIntoDB = async (
       });
 
       if (!product)
-        throw new Error(`Product with ID ${item.productId} not found`);
+        throw new AppError(404, `Product with ID ${item.productId} not found`);
       if (product.stockLevel < item.quantity) {
-        throw new Error(
+        throw new AppError(
+          400,
           `Insufficient stock for ${product.title}. Available: ${product.stockLevel}`,
         );
       }
@@ -64,17 +65,8 @@ const createOrderIntoDB = async (
   });
 };
 
-const getMyOrdersFromDB = async (
-  userId: string,
-  query: Record<string, any>,
-) => {
-  const orderQuery = new QueryBuilder({}, query)
-    .search(["orderNumber"])
-    .filter()
-    .sort()
-    .paginate();
+const getMyOrdersFromDB = async (userId: string) => {
   const orders = await prisma.order.findMany({
-    ...orderQuery.modelQuery,
     where: { userId },
     include: {
       items: {
@@ -90,21 +82,10 @@ const getMyOrdersFromDB = async (
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
-  const total = await prisma.order.count({
-    where: orderQuery.modelQuery.where,
-  });
-
-  return {
-    meta: {
-      page: Number(query.page) || 1,
-      limit: Number(query.limit) || 10,
-      total,
-    },
-    data: orders,
-  };
+  return orders;
 };
 
 const getAllOrdersFromDB = async (query: Record<string, any>) => {
@@ -163,7 +144,7 @@ const updateOrderStatusIntoDB = async (orderId: string, status: string) => {
     });
 
     if (!order) {
-      throw new Error("Order not found");
+      throw new AppError(404, "Order not found");
     }
 
     if (status === "CANCELLED") {

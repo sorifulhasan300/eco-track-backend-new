@@ -21,14 +21,13 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
 const getMyOrders = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user.id;
-    const result = await OrderServices.getMyOrdersFromDB(userId, req.query);
+    const result = await OrderServices.getMyOrdersFromDB(userId);
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
       message: "Orders retrieved successfully",
-      meta: result.meta,
-      data: result.data,
+      data: result,
     });
   } catch (error: any) {
     next(error);
