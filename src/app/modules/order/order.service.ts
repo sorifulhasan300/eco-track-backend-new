@@ -1,4 +1,6 @@
 import { prisma } from "../../../lib/prisma";
+import AppError from "../../utils/app.error";
+import QueryBuilder from "../../builder/QueryBuilder";
 
 const createOrderIntoDB = async (
   userId: string,
@@ -62,8 +64,17 @@ const createOrderIntoDB = async (
   });
 };
 
-const getMyOrdersFromDB = async (userId: string) => {
+const getMyOrdersFromDB = async (
+  userId: string,
+  query: Record<string, any>,
+) => {
+  const orderQuery = new QueryBuilder({}, query)
+    .search(["orderNumber"])
+    .filter()
+    .sort()
+    .paginate();
   const orders = await prisma.order.findMany({
+    ...orderQuery.modelQuery,
     where: { userId },
     include: {
       items: {
@@ -79,14 +90,32 @@ const getMyOrdersFromDB = async (userId: string) => {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
-  return orders;
+  const total = await prisma.order.count({
+    where: orderQuery.modelQuery.where,
+  });
+
+  return {
+    meta: {
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 10,
+      total,
+    },
+    data: orders,
+  };
 };
 
-const getAllOrdersFromDB = async () => {
+const getAllOrdersFromDB = async (query: Record<string, any>) => {
+  const orderQuery = new QueryBuilder({}, query)
+    .search(["orderNumber"])
+    .filter()
+    .sort()
+    .paginate();
+
   const orders = await prisma.order.findMany({
+    ...orderQuery.modelQuery,
     include: {
       user: {
         select: {
@@ -108,14 +137,81 @@ const getAllOrdersFromDB = async () => {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
   });
 
-  return orders;
+  const total = await prisma.order.count({
+    where: orderQuery.modelQuery.where,
+  });
+
+  return {
+    meta: {
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 10,
+      total,
+    },
+    data: orders,
+  };
+};
+
+const updateOrderStatusIntoDB = async (orderId: string, status: string) => {
+  return await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (status === "CANCELLED") {
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stockLevel: {
+              increment: item.quantity,
+            },
+          },
+        });
+      }
+    }
+
+    const updatedOrder = await tx.order.update({
+      where: { id: orderId },
+      data: { status: status as any },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return updatedOrder;
+  });
 };
 
 export const OrderServices = {
   createOrderIntoDB,
   getMyOrdersFromDB,
   getAllOrdersFromDB,
+  updateOrderStatusIntoDB,
 };

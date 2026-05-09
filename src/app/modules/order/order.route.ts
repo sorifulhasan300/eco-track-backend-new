@@ -26,4 +26,11 @@ router.get(
   OrderControllers.getAllOrders,
 );
 
+router.patch(
+  "/:orderId/status",
+  auth(USER_ROLE.ADMIN, USER_ROLE.MANAGER),
+  validateRequest(OrderValidations.updateOrderStatusValidationSchema),
+  OrderControllers.updateOrderStatus,
+);
+
 export const OrderRoutes = router;

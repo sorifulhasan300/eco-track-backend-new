@@ -13,6 +13,13 @@ const createOrderValidationSchema = z.object({
   }),
 });
 
+const updateOrderStatusValidationSchema = z.object({
+  body: z.object({
+    status: z.enum(["PENDING", "COMPLETED", "CANCELLED"]),
+  }),
+});
+
 export const OrderValidations = {
   createOrderValidationSchema,
+  updateOrderStatusValidationSchema,
 };
