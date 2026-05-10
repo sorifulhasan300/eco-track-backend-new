@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "dev": "tsup src/index.ts --watch --onSuccess \"node dist/index.js\"",
+    "build": "tsup src/server.ts --clean --minify --format cjs,esm",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -43,6 +43,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "winston": "^3.19.0",
     "zod": "^4.4.3"

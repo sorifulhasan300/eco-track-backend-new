@@ -7,7 +7,6 @@ const auth = (...requiredRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authHeader = req.headers.authorization;
-      console.log(authHeader);
       if (!authHeader) {
         throw new AppError(401, "You are not authorized!");
       }
