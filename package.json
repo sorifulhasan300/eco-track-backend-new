@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsup src/index.ts --watch --onSuccess \"node dist/index.js\"",
+    "dev": "tsx watch src/server.ts",
     "build": "tsup src/server.ts --clean --minify --format cjs,esm",
     "start": "node dist/server.js"
   },
@@ -39,9 +39,11 @@
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
+    "dotenv": "^8.2.0",
     "express-rate-limit": "^8.5.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^3.3.2",
     "pg": "^8.20.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",

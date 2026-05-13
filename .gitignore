@@ -1,4 +1,3 @@
-.env
 node_modules
 dist
 coverage
@@ -8,3 +7,4 @@ logs
 src/generated/
 prisma/migrations
 .vercel
+config.bat

@@ -16,4 +16,11 @@ router.patch(
   UserControllers.updateUserRoleAndStatus,
 );
 
+router.patch(
+  "/profile/update",
+  auth(),
+  validateRequest(UserValidations.updateUserProfileValidationSchema),
+  UserControllers.updateUserProfile,
+);
+
 export const UserRoutes = router;

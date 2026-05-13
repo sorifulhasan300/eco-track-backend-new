@@ -74,7 +74,40 @@ const updateUserRoleAndStatusIntoDB = async (
   return updatedUser;
 };
 
+const updateUserProfileIntoDB = async (
+  userId: string,
+  payload: { name?: string; email?: string; image?: string }
+) => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  // Update the user with the allowed fields
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(payload.name && { name: payload.name }),
+      ...(payload.email && { email: payload.email }),
+      ...(payload.image && { image: payload.image }),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      image: true,
+      createdAt: true,
+    },
+  });
+
+  return updatedUser;
+};
+
 export const UserServices = {
   getAllUsersFromDB,
   updateUserRoleAndStatusIntoDB,
+  updateUserProfileIntoDB,
 };

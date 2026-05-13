@@ -45,7 +45,34 @@ const updateUserRoleAndStatus = async (
   }
 };
 
+const updateUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, image } = req.body;
+
+    const result = await UserServices.updateUserProfileIntoDB(userId, {
+      name,
+      email,
+      image,
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Profile updated successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 export const UserControllers = {
   getAllUsers,
   updateUserRoleAndStatus,
+  updateUserProfile,
 };
